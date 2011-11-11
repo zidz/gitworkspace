@@ -1,11 +1,11 @@
 #!/bin/bash
-DELAY=20
+PROCENT=5
 RUN=0
 function USAGE {
 	echo -e "Usage: $0 [FLAGS]... [BITHORDE LINK FILE]\n\n  -h, --help     Shows this help.\n  -p, --play     Opens file with xdg-open after delay. (DEFAULT: No)\n  -d, --delay    Wait [SECONDS] before open with xdg-open. (DEFAULT: 20)\n"
 }
 if [ "$1" = "" ]; then
-        echo "bhbuff requires exatly one argument."
+        echo "bhbuff requires following arguments..."
 	USAGE
         exit 1
 fi
@@ -16,27 +16,41 @@ while [ $# -gt 0 ]; do
 	      exit 0
 	      ;;
     -r|--run)
-              export RUN=1
+              RUN=1
               ;;
-    -d|--delay)
-              export DELAY="$2"
-              if ! [[ "$DELAY" =~ ^[0-9]+$ ]]; then
-                echo "Delay needs to be a number..."
-		USAGE
-                exit 1
+    -p|--procent)
+              PROCENT="$2"
+              if [[ "$PROCENT" =~ ^[0-9]+$ ]]; then
+			if [ "$PROCENT" -ge 100 ]; then
+				PROCENT=100
+			fi
+		else
+                	echo "Procent needs to be a number between 1 - 100..."
+			USAGE
+                	exit 1
               fi
               ;;
     *)
-              export FILE=${!#}
+              FILE=${!#}
+	      if ! [[ $(readlink "$FILE") == *magnet* ]]; then
+		echo "File not a bithorde symlink..."
+		USAGE
+		exit 1
+	      fi
+		
 	      ;;
   esac
   shift
 done
-
-exec bhget -sy -pn "$FILE" > /dev/null &
-BHGETPID=$!
-trap "echo -e '\nKilling script and its childs...';kill -9 $BHGETPID; exit 130" SIGINT SIGTERM
+PIECETOLOAD="$(($(($(($(stat -L -c%s "$FILE")/100))*$PROCENT))/512))"
+echo "dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD"
+dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD
+#bhget -sy -py "$FILE" > /dev/null &
+#BHGETPID=$!
+#echo -e "BHGETPID: $BHGETPID\n"
+#trap "echo -e '\nKilling script and its childs...';kill $BHGETPID; exit 130" SIGINT SIGTERM
 if [ "$RUN" = 1 ]; then
 	sleep $DELAY
 	xdg-open "$FILE" > /dev/null 2> /dev/null
+	dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD
 fi
