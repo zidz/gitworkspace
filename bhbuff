@@ -1,11 +1,16 @@
 #!/bin/bash
-PROCENT=5
-RUN=0
+PERCENT=10
+RUN=1
 function USAGE {
-	echo -e "Usage: $0 [FLAGS]... [BITHORDE LINK FILE]\n\n  -h, --help     Shows this help.\n  -p, --play     Opens file with xdg-open after delay. (DEFAULT: No)\n  -d, --delay    Wait [SECONDS] before open with xdg-open. (DEFAULT: 20)\n"
+	echo -e "
+Usage: $0 [FLAGS]... [BITHORDE LINK FILE]\n
+  -h, --help        Shows this help.
+  -p, --percent     Load asset [NUM] percent. (DEFAULT: 10)
+  -n, --norun       Don\'t open asset with xdg-open after preload. (DEFAULT: Open asset after preload)\n
+  Example: $0 -p 50 -n MyBithordeLink.avi\n"
 }
 if [ "$1" = "" ]; then
-        echo "bhbuff requires following arguments..."
+        echo "bhbuff needs a bithorde link to handle..."
 	USAGE
         exit 1
 fi
@@ -15,14 +20,14 @@ while [ $# -gt 0 ]; do
 	      USAGE
 	      exit 0
 	      ;;
-    -r|--run)
-              RUN=1
+    -n|--norun)
+              RUN=0
               ;;
-    -p|--procent)
-              PROCENT="$2"
-              if [[ "$PROCENT" =~ ^[0-9]+$ ]]; then
-			if [ "$PROCENT" -ge 100 ]; then
-				PROCENT=100
+    -p|--percent)
+              PERCENT="$2"
+              if [[ "$PERCENT" =~ ^[0-9]+$ ]]; then
+			if [ "$PERCENT" -ge 100 ]; then
+				PERCENT=100
 			fi
 		else
                 	echo "Procent needs to be a number between 1 - 100..."
@@ -42,15 +47,10 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-PIECETOLOAD="$(($(($(($(stat -L -c%s "$FILE")/100))*$PROCENT))/512))"
+PIECETOLOAD="$(($(($(($(stat -L -c%s "$FILE")/100))*$PERCENT))/512))"
 echo "dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD"
 dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD
-#bhget -sy -py "$FILE" > /dev/null &
-#BHGETPID=$!
-#echo -e "BHGETPID: $BHGETPID\n"
-#trap "echo -e '\nKilling script and its childs...';kill $BHGETPID; exit 130" SIGINT SIGTERM
 if [ "$RUN" = 1 ]; then
-	sleep $DELAY
 	xdg-open "$FILE" > /dev/null 2> /dev/null
-	dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD
+	dd if="$FILE" of=/dev/null bs=512 skip=$PIECETOLOAD
 fi
