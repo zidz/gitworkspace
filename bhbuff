@@ -48,6 +48,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 PIECETOLOAD="$(($(($(($(stat -L -c%s "$FILE")/100))*$PERCENT))/512))"
+echo -e 'For progress, type: kill -USR1 $(pidof dd)\nin another terminal.'
 dd if="$FILE" of=/dev/null bs=512 count=$PIECETOLOAD
 if [ "$RUN" = 1 ]; then
 	xdg-open "$FILE" > /dev/null 2> /dev/null
