@@ -1,0 +1,7 @@
+setenv SSH_AUTH_SOCK $HOME/.ssh/ssh_auth_sock
+hardstatus off
+hardstatus alwayslastline
+hardstatus string '%{= kG}[ %{G}%H %l %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %d-%m-%Y %{W} %D %c %{g}]'
+startup_message off
+termcapinfo xterm* ti@:te@
+defscrollback 10000
